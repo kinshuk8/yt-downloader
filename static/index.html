@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>YT Downloader</title>
+<style>
+  :root {
+    --bg: #f6f6f4; --card: #fff; --text: #1b1b1a; --muted: #6b6b66;
+    --line: #e4e3df; --accent: #d93025; --accent-ink: #fff; --ok: #1e8e3e;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141413; --card: #1e1e1c; --text: #eceae4; --muted: #9b9a94;
+      --line: #2f2e2b; --accent: #ff5a4e; --accent-ink: #141413; --ok: #5bc77a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  main { max-width: 640px; margin: 48px auto; padding: 0 16px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .row { display: flex; gap: 8px; }
+  input[type=text], select {
+    width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--bg); color: var(--text); font: inherit;
+  }
+  button {
+    padding: 10px 18px; border-radius: 8px; border: 0; cursor: pointer;
+    background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: 600; white-space: nowrap;
+  }
+  button:disabled { opacity: .5; cursor: default; }
+  .info { display: flex; gap: 14px; align-items: flex-start; }
+  .info img { width: 160px; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+  .info h2 { font-size: 16px; margin: 0 0 4px; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .tabs { display: flex; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 3px; margin: 18px 0 14px; }
+  .tabs label { flex: 1; text-align: center; padding: 7px; border-radius: 6px; cursor: pointer; font-weight: 500; }
+  .tabs input { display: none; }
+  .tabs input:checked + span { color: var(--accent); }
+  .tabs label:has(input:checked) { background: var(--card); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .grid label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px; }
+  .bar { height: 8px; background: var(--bg); border-radius: 99px; overflow: hidden; margin: 10px 0 6px; }
+  .bar div { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
+  .status { font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+  .error { color: var(--accent); margin-top: 10px; font-size: 14px; }
+  .done { color: var(--ok); font-weight: 600; }
+  .done a { color: inherit; }
+  .hidden { display: none; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); padding: 6px 14px; font-weight: 500; }
+  @media (max-width: 520px) {
+    .info { flex-direction: column; } .info img { width: 100%; }
+    .grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>YT Downloader</h1>
+      <p class="sub">Paste a YouTube link, pick a quality, download.</p>
+    </div>
+    <button class="ghost" id="quitBtn" title="Stop the downloader">Quit</button>
+  </header>
+
+  <div class="card">
+    <form class="row" id="fetchForm">
+      <input type="text" id="url" placeholder="https://www.youtube.com/watch?v=…" autofocus>
+      <button id="fetchBtn">Fetch</button>
+    </form>
+    <div class="error hidden" id="fetchErr"></div>
+  </div>
+
+  <div class="card hidden" id="optsCard">
+    <div class="info">
+      <img id="thumb" alt="">
+      <div>
+        <h2 id="title"></h2>
+        <div class="meta" id="meta"></div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <label><input type="radio" name="mode" value="video" checked><span>Video</span></label>
+      <label><input type="radio" name="mode" value="audio"><span>MP3 audio</span></label>
+    </div>
+
+    <div class="grid" id="videoOpts">
+      <div><label for="quality">Quality</label><select id="quality"></select></div>
+      <div><label for="container">Format</label>
+        <select id="container">
+          <option value="mp4">MP4 (plays everywhere)</option>
+          <option value="mkv">MKV</option>
+          <option value="webm">WebM</option>
+        </select></div>
+    </div>
+    <div class="grid hidden" id="audioOpts">
+      <div><label for="bitrate">Bitrate</label>
+        <select id="bitrate">
+          <option value="320">320 kbps (best)</option>
+          <option value="256">256 kbps</option>
+          <option value="192">192 kbps</option>
+          <option value="128">128 kbps</option>
+        </select></div>
+    </div>
+
+    <button id="dlBtn" style="width:100%">Download</button>
+
+    <div class="hidden" id="progress">
+      <div class="bar"><div id="barFill"></div></div>
+      <div class="status"><span id="statusText"></span><span id="speedText"></span></div>
+    </div>
+    <div class="error hidden" id="dlErr"></div>
+  </div>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+let currentUrl = "";
+
+const fmtTime = s => {
+  if (!s) return "";
+  const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = String(s % 60).padStart(2, "0");
+  return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
+};
+const label = h => ({ 4320: "8K", 2160: "4K", 1440: "1440p (2K)" })[h] || `${h}p`;
+
+async function post(path, body) {
+  const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || "Request failed");
+  return data;
+}
+
+$("fetchForm").onsubmit = async e => {
+  e.preventDefault();
+  const url = $("url").value.trim();
+  if (!url) return;
+  $("fetchErr").classList.add("hidden");
+  $("fetchBtn").disabled = true; $("fetchBtn").textContent = "Fetching…";
+  try {
+    const info = await post("/api/info", { url });
+    currentUrl = url;
+    $("thumb").src = info.thumbnail || "";
+    $("title").textContent = info.title;
+    $("meta").textContent = [info.channel, fmtTime(info.duration)].filter(Boolean).join(" · ");
+    $("quality").innerHTML = `<option value="best">Best available${info.heights[0] ? ` (${label(info.heights[0])})` : ""}</option>` +
+      info.heights.map(h => `<option value="${h}">${label(h)}</option>`).join("");
+    $("progress").classList.add("hidden"); $("dlErr").classList.add("hidden");
+    $("optsCard").classList.remove("hidden");
+  } catch (err) {
+    $("fetchErr").textContent = err.message; $("fetchErr").classList.remove("hidden");
+  } finally {
+    $("fetchBtn").disabled = false; $("fetchBtn").textContent = "Fetch";
+  }
+};
+
+document.querySelectorAll("input[name=mode]").forEach(r => r.onchange = () => {
+  const audio = r.value === "audio" && r.checked;
+  $("videoOpts").classList.toggle("hidden", audio);
+  $("audioOpts").classList.toggle("hidden", !audio);
+});
+
+$("dlBtn").onclick = async () => {
+  const mode = document.querySelector("input[name=mode]:checked").value;
+  $("dlBtn").disabled = true; $("dlErr").classList.add("hidden");
+  $("progress").classList.remove("hidden");
+  $("barFill").style.width = "0"; $("statusText").textContent = "Starting…"; $("speedText").textContent = "";
+  try {
+    const { job } = await post("/api/download", {
+      url: currentUrl, mode, quality: $("quality").value, container: $("container").value, bitrate: $("bitrate").value,
+    });
+    poll(job);
+  } catch (err) { fail(err.message); }
+};
+
+async function poll(job) {
+  const p = await (await fetch(`/api/progress/${job}`)).json();
+  $("barFill").style.width = `${p.percent || 0}%`;
+  if (p.status === "error") return fail(p.error);
+  if (p.status === "done") {
+    $("statusText").innerHTML = `<span class="done">Saved to ${p.folder}/ · <a href="/api/file/${job}">download copy</a></span>`;
+    $("speedText").textContent = p.filename;
+    $("dlBtn").disabled = false;
+    return;
+  }
+  const status = p.status === "processing" ? "Merging / converting with ffmpeg…" : `${p.status[0].toUpperCase()}${p.status.slice(1)} · ${p.percent}%`;
+  $("statusText").textContent = status;
+  $("speedText").textContent = [p.speed, p.eta && `ETA ${p.eta}`].filter(Boolean).join(" · ");
+  setTimeout(() => poll(job), 600);
+}
+
+$("quitBtn").onclick = async () => {
+  await fetch("/api/quit", { method: "POST" }).catch(() => {});
+  document.querySelector("main").innerHTML = "<h1>YT Downloader stopped</h1><p class='sub'>Open the app again whenever you need it. You can close this tab.</p>";
+};
+
+function fail(msg) {
+  $("dlErr").textContent = msg; $("dlErr").classList.remove("hidden");
+  $("progress").classList.add("hidden"); $("dlBtn").disabled = false;
+}
+</script>
+</body>
+</html>
