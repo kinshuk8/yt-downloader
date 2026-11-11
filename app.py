@@ -1,5 +1,7 @@
 """Local YouTube downloader: Flask backend wrapping yt-dlp + ffmpeg."""
 import os
+import subprocess
+import sys
 import threading
 import uuid
 from pathlib import Path
@@ -10,13 +12,23 @@ from flask import Flask, jsonify, request, send_file, send_from_directory
 DOWNLOAD_DIR = Path.home() / "Downloads" / "YouTube"
 DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-app = Flask(__name__, static_folder="static")
+# Inside the packaged .app, bundled files live next to the executable / in sys._MEIPASS.
+BASE = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
+# ffmpeg (merging/MP3) and QuickJS (YouTube's JS challenge) ship inside the .app.
+TOOLS = Path(sys.executable).parent / "tools"
+
+app = Flask(__name__, static_folder=str(BASE / "static"))
 jobs = {}  # job_id -> dict(status, percent, speed, eta, filepath, error, title)
 
 
 @app.get("/")
 def index():
     return send_from_directory(app.static_folder, "index.html")
+
+
+@app.get("/api/version")
+def version():
+    return jsonify(ytdlp=yt_dlp.version.__version__)
 
 
 @app.post("/api/info")
@@ -75,6 +87,15 @@ def file(job_id):
     return send_file(job["filepath"], as_attachment=True)
 
 
+@app.post("/api/reveal/<job_id>")
+def reveal(job_id):
+    job = jobs.get(job_id)
+    if not job or not job.get("filepath"):
+        return jsonify(error="File not ready."), 404
+    subprocess.run(["open", "-R", job["filepath"]])
+    return jsonify(ok=True)
+
+
 @app.post("/api/quit")
 def quit_app():
     # Give the response a moment to reach the browser before exiting.
@@ -105,6 +126,10 @@ def _options(body, job_id):
         "outtmpl": str(DOWNLOAD_DIR / "%(title)s [%(id)s].%(ext)s"),
         "windowsfilenames": True,
     }
+    if (TOOLS / "ffmpeg").exists():
+        opts["ffmpeg_location"] = str(TOOLS)
+    if (TOOLS / "qjs").exists():
+        opts["js_runtimes"] = {"quickjs": {"path": str(TOOLS / "qjs")}}
 
     if body.get("mode") == "audio":
         opts.update(

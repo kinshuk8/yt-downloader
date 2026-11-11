@@ -1,6 +1,6 @@
 #!/bin/zsh
 # Starts YT Downloader (setting it up on first run) and opens it in the browser.
-# Used by both start.command and the "YT Downloader.app" built by make-app.sh.
+# Browser version, run from source; start.command calls it.
 set -e
 cd "$(dirname "$0")"
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"

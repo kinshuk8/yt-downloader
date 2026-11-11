@@ -52,6 +52,7 @@
   .done { color: var(--ok); font-weight: 600; }
   .done a { color: inherit; }
   .hidden { display: none; }
+  .foot { text-align: center; color: var(--muted); font-size: 12px; margin-top: 24px; }
   header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
   button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); padding: 6px 14px; font-weight: 500; }
   @media (max-width: 520px) {
@@ -119,11 +120,15 @@
     </div>
     <div class="error hidden" id="dlErr"></div>
   </div>
+  <p class="foot" id="version"></p>
 </main>
 
 <script>
 const $ = id => document.getElementById(id);
 let currentUrl = "";
+// In the Mac app, closing the window quits; the Quit button is only for the browser version.
+if (new URLSearchParams(location.search).has("app")) $("quitBtn").remove();
+fetch("/api/version").then(r => r.json()).then(v => $("version").textContent = `yt-dlp ${v.ytdlp}`);
 
 const fmtTime = s => {
   if (!s) return "";
@@ -186,8 +191,10 @@ async function poll(job) {
   $("barFill").style.width = `${p.percent || 0}%`;
   if (p.status === "error") return fail(p.error);
   if (p.status === "done") {
-    $("statusText").innerHTML = `<span class="done">Saved to ${p.folder}/ · <a href="/api/file/${job}">download copy</a></span>`;
-    $("speedText").textContent = p.filename;
+    $("statusText").innerHTML = `<span class="done">Saved to Downloads/YouTube · <a href="#" id="reveal">Show in Finder</a></span><br><span class="fname"></span>`;
+    $("statusText").querySelector(".fname").textContent = p.filename;
+    $("reveal").onclick = e => { e.preventDefault(); fetch(`/api/reveal/${job}`, { method: "POST" }); };
+    $("speedText").textContent = "";
     $("dlBtn").disabled = false;
     return;
   }
