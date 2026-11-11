@@ -10,6 +10,12 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/kinshuk8/yt-downloader/releases/latest/download/Snag.dmg">
+    <img src="docs/download.png" width="300" alt="Download for Mac">
+  </a>
+</p>
+
+<p align="center">
   <sub>macOS · Apple silicon · 41 MB · <a href="https://github.com/kinshuk8/yt-downloader/releases">All releases</a></sub>
 </p>
 
