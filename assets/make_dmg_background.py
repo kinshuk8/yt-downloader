@@ -38,7 +38,7 @@ def render(scale, fonts):
     # Heading.
     title = ImageFont.truetype(str(fonts / "Geist-SemiBold.ttf"), s(22))
     sub = ImageFont.truetype(str(fonts / "Geist-Regular.ttf"), s(13))
-    d.text((s(W / 2), s(52)), "YT Downloader", font=title, fill=(23, 23, 28), anchor="mm")
+    d.text((s(W / 2), s(52)), "Snag", font=title, fill=(23, 23, 28), anchor="mm")
     d.text((s(W / 2), s(80)), "Drag the app into Applications to install", font=sub, fill=(105, 105, 118), anchor="mm")
 
     # Arrow between the icons: dotted track and a chevron in the accent colour.

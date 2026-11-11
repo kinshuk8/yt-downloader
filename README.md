@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="docs/icon.png" width="112" alt="YT Downloader icon">
+  <img src="docs/icon.png" width="112" alt="Snag icon">
 </p>
 
-<h1 align="center">YT Downloader</h1>
+<h1 align="center">Snag</h1>
 
 <p align="center">
   <b>Save YouTube videos in up to 8K, or as MP3, with one paste.</b><br>
@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/kinshuk8/yt-downloader/releases/latest/download/YT-Downloader.dmg">
+  <a href="https://github.com/kinshuk8/yt-downloader/releases/latest/download/Snag.dmg">
     <img src="docs/download.png" width="300" alt="Download for Mac">
   </a>
 </p>
@@ -22,7 +22,7 @@
 <br>
 
 <p align="center">
-  <img src="docs/hero.png" alt="YT Downloader in light and dark mode">
+  <img src="docs/hero.png" alt="Snag in light and dark mode">
 </p>
 
 <br>
@@ -83,15 +83,15 @@
 ## Install in 10 seconds
 
 <p align="center">
-  <img src="docs/installer.png" width="620" alt="Drag YT Downloader into Applications">
+  <img src="docs/installer.png" width="620" alt="Drag Snag into Applications">
 </p>
 
-1. **[Download the DMG](https://github.com/kinshuk8/yt-downloader/releases/latest/download/YT-Downloader.dmg)** and open it.
-2. Drag **YT Downloader** into **Applications**.
+1. **[Download the DMG](https://github.com/kinshuk8/yt-downloader/releases/latest/download/Snag.dmg)** and open it.
+2. Drag **Snag** into **Applications**.
 3. The first time only: **right-click** the app → **Open** → **Open**.<br>
    <sub>The app isn't notarized by Apple, so macOS asks once. You can also allow it in System Settings → Privacy &amp; Security.</sub>
 
-Downloads are saved to **`~/Downloads/YouTube`**. Click **Show** next to any download to see it in Finder.
+Downloads are saved to **`~/Downloads/Snag`**. Click **Show** next to any download to see it in Finder.
 
 <br>
 
@@ -135,7 +135,7 @@ cd yt-downloader
 ./build-dmg.sh
 ```
 
-Needs [Homebrew](https://brew.sh); the script installs anything missing and writes `dist/YT-Downloader.dmg` in about 30 seconds. Build files go to `~/.cache/yt-downloader-build`.
+Needs [Homebrew](https://brew.sh); the script installs anything missing and writes `dist/Snag.dmg`, plus the notices and third-party sources to attach to the release, in about a minute. Build files go to `~/.cache/snag-build`.
 
 The app is a Flask backend (`app.py`) shown in a native [pywebview](https://pywebview.flowrl.com) window (`desktop.py`). PyInstaller packages it with ffmpeg and QuickJS, which yt-dlp needs to solve YouTube's JavaScript challenge. `updater.py` keeps yt-dlp current inside the packaged app.
 </details>
@@ -156,7 +156,7 @@ Or double-click `start.command`. The first run installs ffmpeg and the Python pa
 <br>
 
 ```bash
-B=~/.cache/yt-downloader-build
+B=~/.cache/snag-build
 $B/venv/bin/python assets/screenshots.py $B/shots light
 $B/venv/bin/python assets/screenshots.py $B/shots dark
 $B/venv/bin/python assets/make_readme_art.py $B/shots $B/fonts
@@ -171,6 +171,15 @@ The screenshots use [Big Buck Bunny](https://peach.blender.org) (CC BY, Blender 
 
 [yt-dlp](https://github.com/yt-dlp/yt-dlp) · [FFmpeg](https://ffmpeg.org) · [QuickJS](https://bellard.org/quickjs/) · [pywebview](https://pywebview.flowrl.com) · [Flask](https://flask.palletsprojects.com) · [Geist](https://vercel.com/font) (SIL Open Font License)
 
+## License
+
+Snag's own code is [MIT-licensed](LICENSE). The app bundles open-source software under its own licenses, including FFmpeg (GPL-3.0-or-later). Every release includes:
+
+- **THIRD-PARTY-NOTICES.txt**, listing every bundled component with its full license text. It's also inside the app (**Licenses** at the bottom of the window).
+- **snag-third-party-sources.tar.gz**, the exact source code and build recipes for the GPL/LGPL components (FFmpeg, x264, x265, LAME, mpg123).
+
 ## Please download responsibly
 
 Only download videos you have the right to, such as your own uploads or Creative Commons content. YouTube's terms don't allow downloading most videos.
+
+<sub>Snag is an independent project. It is not affiliated with, endorsed by, or sponsored by YouTube or Google. YouTube is a trademark of Google LLC.</sub>

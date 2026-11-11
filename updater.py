@@ -10,7 +10,7 @@ import threading
 import urllib.request
 from pathlib import Path
 
-CACHE = Path.home() / "Library" / "Application Support" / "YT Downloader"
+CACHE = Path.home() / "Library" / "Application Support" / "Snag"
 ZIP = CACHE / "yt-dlp.zip"
 RELEASE_API = "https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest"
 
@@ -27,7 +27,7 @@ def check_in_background():
 
 
 def _get(url):
-    req = urllib.request.Request(url, headers={"User-Agent": "yt-downloader"})
+    req = urllib.request.Request(url, headers={"User-Agent": "snag"})
     with urllib.request.urlopen(req, timeout=30) as r:
         return r.read()
 

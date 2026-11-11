@@ -35,7 +35,7 @@ def main():
     updater.check_in_background()
 
     window = webview.create_window(
-        "YT Downloader",
+        "Snag",
         f"http://127.0.0.1:{server.server_port}/?app=1",
         width=620,
         height=760,

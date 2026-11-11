@@ -1,12 +1,12 @@
 #!/bin/zsh
-# Starts YT Downloader (setting it up on first run) and opens it in the browser.
+# Starts Snag (setting it up on first run) and opens it in the browser.
 # Browser version, run from source; start.command calls it.
 set -e
 cd "$(dirname "$0")"
 export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 URL="http://127.0.0.1:5055"
 
-notify() { osascript -e "display notification \"$1\" with title \"YT Downloader\"" 2>/dev/null || true; }
+notify() { osascript -e "display notification \"$1\" with title \"Snag\"" 2>/dev/null || true; }
 
 # Already running? Just open it.
 if curl -s -o /dev/null "$URL"; then
@@ -19,7 +19,7 @@ if ! command -v ffmpeg >/dev/null; then
     notify "Installing ffmpeg (first run only, takes a minute)…"
     brew install ffmpeg
   else
-    osascript -e 'display alert "YT Downloader needs ffmpeg" message "Install Homebrew from https://brew.sh, then open the app again."'
+    osascript -e 'display alert "Snag needs ffmpeg" message "Install Homebrew from https://brew.sh, then open the app again."'
     exit 1
   fi
 fi

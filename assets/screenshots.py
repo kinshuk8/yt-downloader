@@ -87,7 +87,7 @@ def steps(window):
 
 server = make_server("127.0.0.1", 0, app, threaded=True)
 threading.Thread(target=server.serve_forever, daemon=True).start()
-window = webview.create_window("YT Downloader", f"http://127.0.0.1:{server.server_port}/?app=1",
+window = webview.create_window("Snag", f"http://127.0.0.1:{server.server_port}/?app=1",
                                width=620, height=720, vibrancy=True, transparent=True)
 window.events.shown += lambda: unify_titlebar(window)
 webview.start(run, window)
