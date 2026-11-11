@@ -17,7 +17,7 @@ BASE = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
 # ffmpeg (merging/MP3) and QuickJS (YouTube's JS challenge) ship inside the .app.
 TOOLS = Path(sys.executable).parent / "tools"
 
-app = Flask(__name__, static_folder=str(BASE / "static"))
+app = Flask(__name__, static_folder=str(BASE / "static"), static_url_path="")
 jobs = {}  # job_id -> dict(status, percent, speed, eta, filepath, error, title)
 
 

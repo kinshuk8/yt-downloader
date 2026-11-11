@@ -1,50 +1,176 @@
-# YT Downloader
+<p align="center">
+  <img src="docs/icon.png" width="112" alt="YT Downloader icon">
+</p>
 
-A small local app for downloading YouTube videos at the best quality available (up to 4K/8K), or as MP3 audio.
+<h1 align="center">YT Downloader</h1>
 
-- Pick any resolution the video offers, or "Best available"
-- Video as MP4, MKV or WebM
-- MP3 at 128–320 kbps, with the cover art and title saved in the file
-- Live progress, speed and time left
-- Files are saved to `~/Downloads/YouTube/`
+<p align="center">
+  <b>Save YouTube videos in up to 8K, or as MP3, with one paste.</b><br>
+  A small, native Mac app. Free, open source, and private.
+</p>
 
-Built with [yt-dlp](https://github.com/yt-dlp/yt-dlp), ffmpeg and Flask. Everything runs on your own Mac; nothing is uploaded anywhere.
+<p align="center">
+  <a href="https://github.com/kinshuk8/yt-downloader/releases/latest/download/YT-Downloader.dmg">
+    <img src="docs/download.png" width="300" alt="Download for Mac">
+  </a>
+</p>
 
-## Mac app (recommended)
+<p align="center">
+  <sub>macOS · Apple silicon · 41 MB · <a href="https://github.com/kinshuk8/yt-downloader/releases">All releases</a></sub>
+</p>
 
-1. Open `YT-Downloader.dmg` and drag **YT Downloader** into **Applications**.
-2. Open it from Launchpad, Spotlight or the Dock. It runs in its own window; close the window to quit.
+<br>
 
-Everything is bundled (ffmpeg, a JavaScript runtime for YouTube, yt-dlp), so no Homebrew or Terminal needed. yt-dlp updates itself in the background, and the update applies from the next launch. The current version is shown at the bottom of the window.
+<p align="center">
+  <img src="docs/hero.png" alt="YT Downloader in light and dark mode">
+</p>
 
-The app is not notarized by Apple, so on a Mac that downloaded the DMG from the internet, the first launch is blocked: right-click the app → **Open** → **Open** (or allow it in System Settings → Privacy & Security). Apple silicon Macs only.
+<br>
 
-### Building the DMG
+## Paste a link. Pick a quality. Done.
 
-```bash
-./build-dmg.sh
-```
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <h3>🎬 Every quality</h3>
+      Every resolution the video has, from 144p to <b>4K and 8K</b>. Save as MP4, MKV or WebM.
+    </td>
+    <td width="33%" valign="top">
+      <h3>🎵 MP3 in one tap</h3>
+      Audio at <b>128–320 kbps</b>, with the cover art and title saved inside the file.
+    </td>
+    <td width="33%" valign="top">
+      <h3>✨ Feels at home</h3>
+      Frosted glass, native window blur, and it follows your Mac's <b>light or dark</b> mode.
+    </td>
+  </tr>
+  <tr>
+    <td width="33%" valign="top">
+      <h3>📦 Nothing to install</h3>
+      ffmpeg and everything else is <b>built in</b>. No Homebrew, no Terminal.
+    </td>
+    <td width="33%" valign="top">
+      <h3>🔄 Keeps working</h3>
+      YouTube changes often, so the app <b>updates its download engine</b> by itself in the background.
+    </td>
+    <td width="33%" valign="top">
+      <h3>🔒 Private</h3>
+      Runs entirely on your Mac. No accounts, no tracking, nothing uploaded.
+    </td>
+  </tr>
+</table>
 
-Needs Homebrew; it installs anything missing and writes `dist/YT-Downloader.dmg`. Build files are kept in `~/.cache/yt-downloader-build`.
+<br>
 
-## Browser version (from source)
+## Looks right in light and dark
 
-Runs the same app in your browser, straight from the code. Handy while changing it. Needs [Homebrew](https://brew.sh) and Python 3.
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/done-dark.png">
+    <img src="docs/done-light.png" width="420" alt="A finished MP3 download">
+  </picture>
+  &nbsp;&nbsp;
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/app-dark.png">
+    <img src="docs/app-light.png" width="420" alt="Choosing a video quality">
+  </picture>
+</p>
+
+<p align="center"><sub>These screenshots switch with your GitHub theme.</sub></p>
+
+<br>
+
+## Install in 10 seconds
+
+<p align="center">
+  <img src="docs/installer.png" width="620" alt="Drag YT Downloader into Applications">
+</p>
+
+1. **[Download the DMG](https://github.com/kinshuk8/yt-downloader/releases/latest/download/YT-Downloader.dmg)** and open it.
+2. Drag **YT Downloader** into **Applications**.
+3. The first time only: **right-click** the app → **Open** → **Open**.<br>
+   <sub>The app isn't notarized by Apple, so macOS asks once. You can also allow it in System Settings → Privacy &amp; Security.</sub>
+
+Downloads are saved to **`~/Downloads/YouTube`**. Click **Show** next to any download to see it in Finder.
+
+<br>
+
+## Questions
+
+<details>
+<summary><b>A download suddenly fails. What now?</b></summary>
+<br>
+YouTube changes things often. The app downloads fixes in the background when it opens and uses them from the next launch, so quit and reopen it once or twice. The version at the bottom of the window shows which one you're on.
+</details>
+
+<details>
+<summary><b>My 4K video won't play in QuickTime.</b></summary>
+<br>
+At 1440p and above, YouTube only provides VP9 or AV1 video, which QuickTime may not play. Use <a href="https://www.videolan.org/vlc/">VLC</a> or <a href="https://iina.io">IINA</a>, or choose <b>MKV</b>.
+</details>
+
+<details>
+<summary><b>Does it work on Intel Macs?</b></summary>
+<br>
+Not yet. The release is built for Apple silicon (M1 and newer). You can run the browser version from source on any Mac (see below).
+</details>
+
+<details>
+<summary><b>Can I download playlists?</b></summary>
+<br>
+One video at a time for now. If you paste a video link that's part of a playlist, you get just that video.
+</details>
+
+<br>
+
+## For developers
+
+<details>
+<summary><b>Build the app and DMG</b></summary>
+<br>
 
 ```bash
 git clone https://github.com/kinshuk8/yt-downloader.git
 cd yt-downloader
+./build-dmg.sh
+```
+
+Needs [Homebrew](https://brew.sh); the script installs anything missing and writes `dist/YT-Downloader.dmg` in about 30 seconds. Build files go to `~/.cache/yt-downloader-build`.
+
+The app is a Flask backend (`app.py`) shown in a native [pywebview](https://pywebview.flowrl.com) window (`desktop.py`). PyInstaller packages it with ffmpeg and QuickJS, which yt-dlp needs to solve YouTube's JavaScript challenge. `updater.py` keeps yt-dlp current inside the packaged app.
+</details>
+
+<details>
+<summary><b>Run it in the browser, from source</b></summary>
+<br>
+
+```bash
 ./launch.sh
 ```
 
-Or double-click `start.command` in Finder. The first launch installs ffmpeg and the Python packages, so it takes a minute. Click **Quit** in the page when you're done.
+Or double-click `start.command`. The first run installs ffmpeg and the Python packages. Click **Quit** in the page when you're done. Logs go to `server.log`.
+</details>
 
-## Troubleshooting
+<details>
+<summary><b>Regenerate the README images</b></summary>
+<br>
 
-- **Downloads suddenly fail:** YouTube changes often. The app fetches yt-dlp fixes on launch and uses them from the next one, so reopen it once or twice.
-- **4K/1440p video won't play in QuickTime:** YouTube only serves VP9/AV1 at those resolutions. Use VLC or IINA, or choose MKV.
-- **Logs (browser version):** `server.log` in the project folder.
+```bash
+B=~/.cache/yt-downloader-build
+$B/venv/bin/python assets/screenshots.py $B/shots light
+$B/venv/bin/python assets/screenshots.py $B/shots dark
+$B/venv/bin/python assets/make_readme_art.py $B/shots $B/fonts
+```
 
-## Note
+The screenshots use [Big Buck Bunny](https://peach.blender.org) (CC BY, Blender Foundation).
+</details>
+
+<br>
+
+## Built with
+
+[yt-dlp](https://github.com/yt-dlp/yt-dlp) · [FFmpeg](https://ffmpeg.org) · [QuickJS](https://bellard.org/quickjs/) · [pywebview](https://pywebview.flowrl.com) · [Flask](https://flask.palletsprojects.com) · [Geist](https://vercel.com/font) (SIL Open Font License)
+
+## Please download responsibly
 
 Only download videos you have the right to, such as your own uploads or Creative Commons content. YouTube's terms don't allow downloading most videos.

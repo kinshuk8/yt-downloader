@@ -3,216 +3,500 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>YT Downloader</title>
 <style>
+  @font-face { font-family: "Geist"; src: url("fonts/Geist-Variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+  @font-face { font-family: "Geist Mono"; src: url("fonts/GeistMono-Variable.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+
   :root {
-    --bg: #f6f6f4; --card: #fff; --text: #1b1b1a; --muted: #6b6b66;
-    --line: #e4e3df; --accent: #d93025; --accent-ink: #fff; --ok: #1e8e3e;
+    --bg: #f3f3f6;
+    --text: #17171c;
+    --muted: #6e6e7a;
+    --faint: #a3a3ad;
+    --glass: rgba(255, 255, 255, .62);
+    --glass-strong: rgba(255, 255, 255, .85);
+    --hairline: rgba(20, 20, 40, .08);
+    --field: rgba(255, 255, 255, .7);
+    --chip: rgba(20, 20, 40, .045);
+    --chip-hover: rgba(20, 20, 40, .08);
+    --accent: #f0453a;
+    --accent-2: #ff6a4d;
+    --accent-soft: rgba(240, 69, 58, .11);
+    --accent-ink: #fff;
+    --ok: #1f9d55;
+    --ok-soft: rgba(31, 157, 85, .12);
+    --danger: #d93025;
+    --shadow: 0 1px 2px rgba(20, 20, 40, .04), 0 12px 32px -12px rgba(20, 20, 40, .14);
+    --blob-1: rgba(255, 106, 77, .22);
+    --blob-2: rgba(99, 102, 241, .16);
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #141413; --card: #1e1e1c; --text: #eceae4; --muted: #9b9a94;
-      --line: #2f2e2b; --accent: #ff5a4e; --accent-ink: #141413; --ok: #5bc77a;
+      --bg: #0e0e12;
+      --text: #f2f2f5;
+      --muted: #9a9aa6;
+      --faint: #62626d;
+      --glass: rgba(30, 30, 38, .55);
+      --glass-strong: rgba(36, 36, 44, .8);
+      --hairline: rgba(255, 255, 255, .08);
+      --field: rgba(0, 0, 0, .22);
+      --chip: rgba(255, 255, 255, .06);
+      --chip-hover: rgba(255, 255, 255, .1);
+      --accent: #ff5545;
+      --accent-2: #ff7a57;
+      --accent-soft: rgba(255, 85, 69, .16);
+      --ok: #3ccf7d;
+      --ok-soft: rgba(60, 207, 125, .14);
+      --danger: #ff6b5e;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 16px 40px -16px rgba(0, 0, 0, .6);
+      --blob-1: rgba(244, 63, 120, .13);
+      --blob-2: rgba(99, 102, 241, .2);
     }
   }
+
   * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
   body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 "Geist", -apple-system, system-ui, sans-serif;
+    font-feature-settings: "ss01";
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -.005em;
   }
-  main { max-width: 640px; margin: 48px auto; padding: 0 16px; }
-  h1 { font-size: 22px; margin: 0 0 4px; }
-  .sub { color: var(--muted); margin: 0 0 24px; }
-  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-  .row { display: flex; gap: 8px; }
-  input[type=text], select {
-    width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line);
-    background: var(--bg); color: var(--text); font: inherit;
+  /* Soft colour behind the glass. In the Mac app the real desktop blur shows through instead. */
+  body::before {
+    content: ""; position: fixed; inset: -20%; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(40% 35% at 20% 15%, var(--blob-1), transparent 70%),
+      radial-gradient(45% 40% at 85% 30%, var(--blob-2), transparent 70%);
+    filter: blur(20px);
   }
-  button {
-    padding: 10px 18px; border-radius: 8px; border: 0; cursor: pointer;
-    background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: 600; white-space: nowrap;
+  /* Mac app: a light tint over the native window blur so the glass has depth without going flat grey. */
+  html.native { background: transparent; }
+  html.native body { background: color-mix(in srgb, var(--bg) 62%, transparent); }
+  html.native body::before { opacity: .8; }
+  /* Invisible strip under the traffic lights that drags the window (the title bar is merged into the page). */
+  .drag-strip { display: none; }
+  html.native .drag-strip { display: block; position: fixed; top: 0; left: 0; right: 0; height: 28px; z-index: 10; }
+
+  main { max-width: 560px; margin: 0 auto; padding: 40px 20px 32px; }
+  html.native main { padding-top: 48px; }
+
+  /* Header */
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+  .logo { width: 38px; height: 38px; flex-shrink: 0; filter: drop-shadow(0 4px 10px rgba(240, 69, 58, .35)); }
+  header h1 { font-size: 18px; font-weight: 600; letter-spacing: -.02em; margin: 0; line-height: 1.2; }
+  header p { margin: 0; color: var(--muted); font-size: 13px; }
+  header .spacer { flex: 1; }
+
+  /* Glass surfaces */
+  .glass {
+    background: var(--glass);
+    border: 1px solid var(--hairline);
+    border-radius: 20px;
+    box-shadow: var(--shadow);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(24px) saturate(160%);
   }
-  button:disabled { opacity: .5; cursor: default; }
-  .info { display: flex; gap: 14px; align-items: flex-start; }
-  .info img { width: 160px; aspect-ratio: 16/9; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
-  .info h2 { font-size: 16px; margin: 0 0 4px; }
-  .meta { color: var(--muted); font-size: 13px; }
-  .tabs { display: flex; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 3px; margin: 18px 0 14px; }
-  .tabs label { flex: 1; text-align: center; padding: 7px; border-radius: 6px; cursor: pointer; font-weight: 500; }
-  .tabs input { display: none; }
-  .tabs input:checked + span { color: var(--accent); }
-  .tabs label:has(input:checked) { background: var(--card); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
-  .grid label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px; }
-  .bar { height: 8px; background: var(--bg); border-radius: 99px; overflow: hidden; margin: 10px 0 6px; }
-  .bar div { height: 100%; width: 0; background: var(--accent); transition: width .3s; }
-  .status { font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
-  .error { color: var(--accent); margin-top: 10px; font-size: 14px; }
-  .done { color: var(--ok); font-weight: 600; }
-  .done a { color: inherit; }
-  .hidden { display: none; }
-  .foot { text-align: center; color: var(--muted); font-size: 12px; margin-top: 24px; }
-  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-  button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); padding: 6px 14px; font-weight: 500; }
-  @media (max-width: 520px) {
-    .info { flex-direction: column; } .info img { width: 100%; }
-    .grid { grid-template-columns: 1fr; }
+
+  /* URL field */
+  .search { display: flex; align-items: center; gap: 6px; padding: 6px 6px 6px 16px; border-radius: 16px; }
+  .search svg.lead { width: 18px; height: 18px; color: var(--faint); flex-shrink: 0; }
+  .search input {
+    flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text);
+    font: inherit; font-size: 15px; padding: 10px 4px;
   }
+  .search input::placeholder { color: var(--faint); }
+  .search:focus-within { border-color: color-mix(in srgb, var(--accent) 45%, transparent); box-shadow: var(--shadow), 0 0 0 4px var(--accent-soft); }
+
+  button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+  button:disabled { cursor: default; }
+  .btn-primary {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 40px; padding: 0 16px; border-radius: 11px; font-weight: 600; font-size: 14px;
+    color: var(--accent-ink);
+    background: linear-gradient(180deg, var(--accent-2), var(--accent));
+    box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 6px 16px -6px var(--accent);
+    transition: transform .12s, filter .12s, opacity .2s;
+  }
+  .btn-primary:hover:not(:disabled) { filter: brightness(1.05); }
+  .btn-primary:active:not(:disabled) { transform: scale(.98); }
+  .btn-primary:disabled { opacity: .55; }
+  .btn-primary svg { width: 16px; height: 16px; }
+  .btn-ghost {
+    display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 9px;
+    font-size: 13px; font-weight: 500; color: var(--muted); background: var(--chip); transition: background .15s, color .15s;
+  }
+  .btn-ghost:hover { background: var(--chip-hover); color: var(--text); }
+  .btn-ghost svg { width: 15px; height: 15px; }
+
+  .spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .error {
+    display: flex; gap: 8px; align-items: flex-start; margin-top: 12px; padding: 10px 14px; border-radius: 12px;
+    color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); font-size: 13px;
+  }
+  .error svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px; }
+
+  /* Video card */
+  .card { margin-top: 16px; padding: 14px; animation: rise .35s cubic-bezier(.2, .8, .2, 1); }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
+  .media { display: flex; gap: 14px; align-items: center; }
+  .thumb { position: relative; width: 168px; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; flex-shrink: 0; background: var(--chip); }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .badge {
+    position: absolute; right: 6px; bottom: 6px; padding: 1px 6px; border-radius: 6px;
+    background: rgba(0, 0, 0, .72); color: #fff; font: 500 11px/1.6 "Geist Mono", monospace;
+  }
+  .media h2 { font-size: 15px; font-weight: 600; line-height: 1.35; margin: 0 0 4px; letter-spacing: -.01em;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .media .meta { color: var(--muted); font-size: 13px; }
+
+  /* Skeleton while fetching */
+  .skeleton .thumb, .skeleton .line { background: linear-gradient(90deg, var(--chip) 0%, var(--chip-hover) 50%, var(--chip) 100%); background-size: 200% 100%; animation: shimmer 1.2s infinite; }
+  .skeleton .line { height: 12px; border-radius: 6px; margin: 6px 0; }
+  @keyframes shimmer { to { background-position: -200% 0; } }
+
+  .divider { height: 1px; background: var(--hairline); margin: 14px -14px; }
+
+  /* Segmented control */
+  .segmented { position: relative; display: grid; grid-template-columns: 1fr 1fr; padding: 3px; border-radius: 12px; background: var(--chip); }
+  .segmented .pill {
+    position: absolute; top: 3px; bottom: 3px; left: 3px; width: calc(50% - 3px); border-radius: 9px;
+    background: var(--glass-strong); box-shadow: 0 1px 3px rgba(0, 0, 0, .1), 0 0 0 1px var(--hairline);
+    transition: transform .28s cubic-bezier(.3, .9, .3, 1);
+  }
+  .segmented[data-mode="audio"] .pill { transform: translateX(100%); }
+  .segmented button {
+    position: relative; z-index: 1; display: flex; align-items: center; justify-content: center; gap: 7px;
+    height: 34px; font-weight: 500; color: var(--muted); transition: color .2s;
+  }
+  .segmented button svg { width: 15px; height: 15px; }
+  .segmented button.on { color: var(--text); }
+
+  .group { margin-top: 16px; }
+  .label { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 8px; }
+  .label .hint { color: var(--faint); font-weight: 400; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    height: 32px; padding: 0 12px; border-radius: 9px; font-size: 13px; font-weight: 500;
+    background: var(--chip); color: var(--text); transition: background .15s, color .15s, box-shadow .15s;
+    font-variant-numeric: tabular-nums;
+  }
+  .chip:hover { background: var(--chip-hover); }
+  .chip.on { background: var(--accent-soft); color: var(--accent); box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent) inset; }
+  .chip small { font-weight: 400; opacity: .7; margin-left: 4px; }
+
+  /* Download button doubles as the progress bar */
+  .dl { position: relative; width: 100%; height: 48px; margin-top: 18px; border-radius: 13px; overflow: hidden; font-size: 15px; }
+  .dl .fill { position: absolute; inset: 0; width: 0; background: rgba(255, 255, 255, .22); transition: width .4s ease; }
+  .dl .text { position: relative; display: inline-flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+  .dl.busy { opacity: 1 !important; }
+  /* Fixed greens (not --ok, which is lightened for dark mode) so the white label stays readable in both themes. */
+  .dl.done { background: linear-gradient(180deg, #2fb866, #1b8f4c); box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 6px 16px -6px #1b8f4c; }
+  .sub-status { display: flex; justify-content: space-between; color: var(--muted); font: 12px/18px "Geist Mono", monospace; }
+  .sub-status:has(span:not(:empty)) { margin-top: 8px; }
+
+  /* Recent downloads */
+  .recent { margin-top: 24px; }
+  .recent h3 { font-size: 12px; font-weight: 500; color: var(--muted); margin: 0 0 8px 4px; }
+  .recent ul { list-style: none; margin: 0; padding: 4px; }
+  .recent li { display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 10px; border-radius: 12px; animation: rise .3s ease; }
+  .recent li + li { border-top: 1px solid var(--hairline); border-radius: 0; }
+  .recent .icon { width: 32px; height: 32px; border-radius: 9px; display: grid; place-items: center; background: var(--ok-soft); color: var(--ok); flex-shrink: 0; }
+  .recent .icon svg { width: 16px; height: 16px; }
+  .recent .name { flex: 1; min-width: 0; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .recent .kind { color: var(--faint); font-weight: 400; font-size: 12px; }
+
+  footer { margin-top: 28px; text-align: center; color: var(--faint); font: 11px "Geist Mono", monospace; }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 480px) {
+    .media { flex-direction: column; align-items: stretch; }
+    .thumb { width: 100%; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 3v18M17 3v18M3 8h4M3 16h4M17 8h4M17 16h4"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12M6 11l6 6 6-6M5 20h14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v4.5M12 16h.01"/></symbol>
+    <symbol id="i-power" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v8M6.3 7a8 8 0 1 0 11.4 0"/></symbol>
+  </defs>
+</svg>
+
+<div class="drag-strip pywebview-drag-region"></div>
 <main>
-  <header>
+  <header class="pywebview-drag-region">
+    <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+      <defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff5c4d"/><stop offset="1" stop-color="#c4161c"/></linearGradient></defs>
+      <rect width="64" height="64" rx="15" fill="url(#lg)"/>
+      <path d="M32 15v20M23 28l9 9 9-9M19 47h26" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
     <div>
       <h1>YT Downloader</h1>
-      <p class="sub">Paste a YouTube link, pick a quality, download.</p>
+      <p>Videos up to 8K, or MP3 audio</p>
     </div>
-    <button class="ghost" id="quitBtn" title="Stop the downloader">Quit</button>
+    <div class="spacer"></div>
+    <button class="btn-ghost" id="quitBtn" title="Stop the downloader"><svg><use href="#i-power"/></svg>Quit</button>
   </header>
 
-  <div class="card">
-    <form class="row" id="fetchForm">
-      <input type="text" id="url" placeholder="https://www.youtube.com/watch?v=…" autofocus>
-      <button id="fetchBtn">Fetch</button>
-    </form>
-    <div class="error hidden" id="fetchErr"></div>
-  </div>
+  <form class="search glass" id="fetchForm">
+    <svg class="lead"><use href="#i-link"/></svg>
+    <input type="text" id="url" placeholder="Paste a YouTube link" autocomplete="off" spellcheck="false" autofocus>
+    <button class="btn-primary" id="fetchBtn" aria-label="Fetch"><svg><use href="#i-arrow"/></svg></button>
+  </form>
+  <div class="error hidden" id="fetchErr"><svg><use href="#i-alert"/></svg><span></span></div>
 
-  <div class="card hidden" id="optsCard">
-    <div class="info">
-      <img id="thumb" alt="">
+  <section class="card glass skeleton hidden" id="skeleton">
+    <div class="media">
+      <div class="thumb"></div>
+      <div style="flex:1"><div class="line" style="width:85%"></div><div class="line" style="width:60%"></div><div class="line" style="width:35%"></div></div>
+    </div>
+  </section>
+
+  <section class="card glass hidden" id="optsCard">
+    <div class="media">
+      <div class="thumb"><img id="thumb" alt=""><span class="badge" id="duration"></span></div>
       <div>
         <h2 id="title"></h2>
-        <div class="meta" id="meta"></div>
+        <div class="meta" id="channel"></div>
       </div>
     </div>
 
-    <div class="tabs">
-      <label><input type="radio" name="mode" value="video" checked><span>Video</span></label>
-      <label><input type="radio" name="mode" value="audio"><span>MP3 audio</span></label>
+    <div class="divider"></div>
+
+    <div class="segmented" id="mode" data-mode="video">
+      <span class="pill"></span>
+      <button type="button" data-mode="video" class="on"><svg><use href="#i-film"/></svg>Video</button>
+      <button type="button" data-mode="audio"><svg><use href="#i-music"/></svg>MP3 audio</button>
     </div>
 
-    <div class="grid" id="videoOpts">
-      <div><label for="quality">Quality</label><select id="quality"></select></div>
-      <div><label for="container">Format</label>
-        <select id="container">
-          <option value="mp4">MP4 (plays everywhere)</option>
-          <option value="mkv">MKV</option>
-          <option value="webm">WebM</option>
-        </select></div>
+    <div id="videoOpts">
+      <div class="group">
+        <div class="label">Quality</div>
+        <div class="chips" id="qualityChips"></div>
+      </div>
+      <div class="group">
+        <div class="label">Format <span class="hint" id="formatHint"></span></div>
+        <div class="chips" id="formatChips"></div>
+      </div>
     </div>
-    <div class="grid hidden" id="audioOpts">
-      <div><label for="bitrate">Bitrate</label>
-        <select id="bitrate">
-          <option value="320">320 kbps (best)</option>
-          <option value="256">256 kbps</option>
-          <option value="192">192 kbps</option>
-          <option value="128">128 kbps</option>
-        </select></div>
+    <div id="audioOpts" class="hidden">
+      <div class="group">
+        <div class="label">Bitrate</div>
+        <div class="chips" id="bitrateChips"></div>
+      </div>
     </div>
 
-    <button id="dlBtn" style="width:100%">Download</button>
+    <button class="btn-primary dl" id="dlBtn"><span class="fill" id="fill"></span><span class="text" id="dlText"></span></button>
+    <div class="sub-status"><span id="subLeft"></span><span id="subRight"></span></div>
+    <div class="error hidden" id="dlErr"><svg><use href="#i-alert"/></svg><span></span></div>
+  </section>
 
-    <div class="hidden" id="progress">
-      <div class="bar"><div id="barFill"></div></div>
-      <div class="status"><span id="statusText"></span><span id="speedText"></span></div>
-    </div>
-    <div class="error hidden" id="dlErr"></div>
-  </div>
-  <p class="foot" id="version"></p>
+  <section class="recent hidden" id="recent">
+    <h3>Downloaded</h3>
+    <ul class="glass" id="recentList"></ul>
+  </section>
+
+  <footer id="version"></footer>
 </main>
 
 <script>
 const $ = id => document.getElementById(id);
-let currentUrl = "";
-// In the Mac app, closing the window quits; the Quit button is only for the browser version.
-if (new URLSearchParams(location.search).has("app")) $("quitBtn").remove();
-fetch("/api/version").then(r => r.json()).then(v => $("version").textContent = `yt-dlp ${v.ytdlp}`);
+const icon = name => `<svg><use href="#i-${name}"/></svg>`;
+const isApp = new URLSearchParams(location.search).has("app");
+// In the Mac app the window has native blur, and closing it quits; Quit is only for the browser version.
+if (isApp) { document.documentElement.classList.add("native"); $("quitBtn").remove(); }
+
+const state = { url: "", mode: "video", quality: "best", container: "mp4", bitrate: "320", busy: false };
+const FORMATS = [["mp4", "MP4", "Plays everywhere"], ["mkv", "MKV", "Best for 4K / HDR"], ["webm", "WebM", "YouTube's native format"]];
+const BITRATES = [["320", "320", "kbps"], ["256", "256", "kbps"], ["192", "192", "kbps"], ["128", "128", "kbps"]];
 
 const fmtTime = s => {
   if (!s) return "";
-  const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = String(s % 60).padStart(2, "0");
+  const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = String(Math.floor(s % 60)).padStart(2, "0");
   return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`;
 };
-const label = h => ({ 4320: "8K", 2160: "4K", 1440: "1440p (2K)" })[h] || `${h}p`;
+const resLabel = h => ({ 4320: "8K", 2160: "4K", 1440: "1440p" })[h] || `${h}p`;
+
+function showError(id, msg) {
+  $(id).querySelector("span").textContent = msg;
+  $(id).classList.toggle("hidden", !msg);
+}
 
 async function post(path, body) {
   const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const data = await r.json();
-  if (!r.ok) throw new Error(data.error || "Request failed");
+  if (!r.ok) throw new Error(data.error || "Something went wrong");
   return data;
 }
 
-$("fetchForm").onsubmit = async e => {
-  e.preventDefault();
+// Chips: a row of toggle buttons bound to one key of `state`.
+function chips(el, items, key) {
+  el.innerHTML = items.map(([v, label, small]) =>
+    `<button type="button" class="chip${state[key] === v ? " on" : ""}" data-v="${v}">${label}${small ? `<small>${small}</small>` : ""}</button>`).join("");
+  el.onclick = e => {
+    const b = e.target.closest(".chip");
+    if (!b || state.busy) return;
+    state[key] = b.dataset.v;
+    el.querySelectorAll(".chip").forEach(c => c.classList.toggle("on", c === b));
+    if (key === "container") updateFormatHint();
+    resetButton();
+  };
+}
+const updateFormatHint = () => $("formatHint").textContent = FORMATS.find(f => f[0] === state.container)[2];
+
+/* Fetch video info */
+async function fetchInfo() {
   const url = $("url").value.trim();
-  if (!url) return;
-  $("fetchErr").classList.add("hidden");
-  $("fetchBtn").disabled = true; $("fetchBtn").textContent = "Fetching…";
+  if (!url || state.busy) return;
+  showError("fetchErr", "");
+  $("fetchBtn").disabled = true;
+  $("fetchBtn").innerHTML = `<span class="spinner"></span>`;
+  $("optsCard").classList.add("hidden");
+  $("skeleton").classList.remove("hidden");
   try {
     const info = await post("/api/info", { url });
-    currentUrl = url;
+    state.url = url;
     $("thumb").src = info.thumbnail || "";
+    $("duration").textContent = fmtTime(info.duration);
+    $("duration").classList.toggle("hidden", !info.duration);
     $("title").textContent = info.title;
-    $("meta").textContent = [info.channel, fmtTime(info.duration)].filter(Boolean).join(" · ");
-    $("quality").innerHTML = `<option value="best">Best available${info.heights[0] ? ` (${label(info.heights[0])})` : ""}</option>` +
-      info.heights.map(h => `<option value="${h}">${label(h)}</option>`).join("");
-    $("progress").classList.add("hidden"); $("dlErr").classList.add("hidden");
+    $("channel").textContent = info.channel || "";
+    state.quality = "best";
+    chips($("qualityChips"), [["best", "Best", info.heights[0] ? resLabel(info.heights[0]) : ""], ...info.heights.map(h => [String(h), resLabel(h)])], "quality");
+    showError("dlErr", "");
+    resetButton();
     $("optsCard").classList.remove("hidden");
   } catch (err) {
-    $("fetchErr").textContent = err.message; $("fetchErr").classList.remove("hidden");
+    showError("fetchErr", err.message);
   } finally {
-    $("fetchBtn").disabled = false; $("fetchBtn").textContent = "Fetch";
+    $("skeleton").classList.add("hidden");
+    $("fetchBtn").disabled = false;
+    $("fetchBtn").innerHTML = icon("arrow");
   }
+}
+$("fetchForm").onsubmit = e => { e.preventDefault(); fetchInfo(); };
+// Pasting a link fetches it straight away.
+$("url").addEventListener("paste", () => setTimeout(() => /^https?:\/\//.test($("url").value.trim()) && fetchInfo(), 0));
+
+/* Mode toggle */
+$("mode").onclick = e => {
+  const b = e.target.closest("button");
+  if (!b || state.busy) return;
+  state.mode = b.dataset.mode;
+  $("mode").dataset.mode = state.mode;
+  $("mode").querySelectorAll("button").forEach(x => x.classList.toggle("on", x === b));
+  $("videoOpts").classList.toggle("hidden", state.mode === "audio");
+  $("audioOpts").classList.toggle("hidden", state.mode !== "audio");
+  resetButton();
 };
 
-document.querySelectorAll("input[name=mode]").forEach(r => r.onchange = () => {
-  const audio = r.value === "audio" && r.checked;
-  $("videoOpts").classList.toggle("hidden", audio);
-  $("audioOpts").classList.toggle("hidden", !audio);
-});
+/* Download */
+function resetButton() {
+  if (state.busy) return;
+  const btn = $("dlBtn");
+  btn.classList.remove("done");
+  btn.disabled = false;
+  $("fill").style.width = "0";
+  const what = state.mode === "audio" ? `MP3 · ${state.bitrate} kbps`
+    : `${state.quality === "best" ? "Best quality" : resLabel(+state.quality)} · ${state.container.toUpperCase()}`;
+  $("dlText").innerHTML = `${icon("down")}Download ${what}`;
+  $("subLeft").textContent = ""; $("subRight").textContent = "";
+}
 
 $("dlBtn").onclick = async () => {
-  const mode = document.querySelector("input[name=mode]:checked").value;
-  $("dlBtn").disabled = true; $("dlErr").classList.add("hidden");
-  $("progress").classList.remove("hidden");
-  $("barFill").style.width = "0"; $("statusText").textContent = "Starting…"; $("speedText").textContent = "";
+  if (state.busy) return;
+  if ($("dlBtn").classList.contains("done")) return resetButton();
+  state.busy = true;
+  showError("dlErr", "");
+  $("dlBtn").classList.add("busy");
+  $("dlBtn").disabled = true;
+  $("dlText").innerHTML = `<span class="spinner"></span>Starting…`;
   try {
     const { job } = await post("/api/download", {
-      url: currentUrl, mode, quality: $("quality").value, container: $("container").value, bitrate: $("bitrate").value,
+      url: state.url, mode: state.mode, quality: state.quality, container: state.container, bitrate: state.bitrate,
     });
     poll(job);
   } catch (err) { fail(err.message); }
 };
 
 async function poll(job) {
-  const p = await (await fetch(`/api/progress/${job}`)).json();
-  $("barFill").style.width = `${p.percent || 0}%`;
+  let p;
+  try { p = await (await fetch(`/api/progress/${job}`)).json(); }
+  catch { return setTimeout(() => poll(job), 1000); }
+
   if (p.status === "error") return fail(p.error);
-  if (p.status === "done") {
-    $("statusText").innerHTML = `<span class="done">Saved to Downloads/YouTube · <a href="#" id="reveal">Show in Finder</a></span><br><span class="fname"></span>`;
-    $("statusText").querySelector(".fname").textContent = p.filename;
-    $("reveal").onclick = e => { e.preventDefault(); fetch(`/api/reveal/${job}`, { method: "POST" }); };
-    $("speedText").textContent = "";
-    $("dlBtn").disabled = false;
-    return;
+  if (p.status === "done") return finish(job, p);
+
+  const pct = p.percent || 0;
+  $("fill").style.width = `${pct}%`;
+  if (p.status === "starting") {
+    // Still resolving formats; keep the spinner from the click.
+  } else if (p.status === "processing") {
+    $("dlText").innerHTML = `<span class="spinner"></span>${state.mode === "audio" ? "Converting to MP3…" : "Merging video and audio…"}`;
+    $("subLeft").textContent = ""; $("subRight").textContent = "";
+  } else {
+    const what = p.status.replace("downloading", "").trim();
+    $("dlText").textContent = `Downloading${what ? " " + what : ""} · ${Math.floor(pct)}%`;
+    $("subLeft").textContent = p.speed || "";
+    $("subRight").textContent = p.eta ? `${p.eta} left` : "";
   }
-  const status = p.status === "processing" ? "Merging / converting with ffmpeg…" : `${p.status[0].toUpperCase()}${p.status.slice(1)} · ${p.percent}%`;
-  $("statusText").textContent = status;
-  $("speedText").textContent = [p.speed, p.eta && `ETA ${p.eta}`].filter(Boolean).join(" · ");
-  setTimeout(() => poll(job), 600);
+  setTimeout(() => poll(job), 500);
 }
 
-$("quitBtn").onclick = async () => {
-  await fetch("/api/quit", { method: "POST" }).catch(() => {});
-  document.querySelector("main").innerHTML = "<h1>YT Downloader stopped</h1><p class='sub'>Open the app again whenever you need it. You can close this tab.</p>";
-};
+function finish(job, p) {
+  state.busy = false;
+  const btn = $("dlBtn");
+  btn.classList.remove("busy");
+  btn.classList.add("done");
+  btn.disabled = false;
+  $("fill").style.width = "0";
+  $("dlText").innerHTML = `${icon("check")}Saved to Downloads`;
+  $("subLeft").textContent = ""; $("subRight").textContent = "";
+  addRecent(job, p.filename, state.mode);
+}
 
 function fail(msg) {
-  $("dlErr").textContent = msg; $("dlErr").classList.remove("hidden");
-  $("progress").classList.add("hidden"); $("dlBtn").disabled = false;
+  state.busy = false;
+  $("dlBtn").classList.remove("busy");
+  showError("dlErr", msg);
+  resetButton();
 }
+
+function addRecent(job, filename, mode) {
+  const li = document.createElement("li");
+  li.innerHTML = `<span class="icon">${icon(mode === "audio" ? "music" : "film")}</span>
+    <span class="name"></span>
+    <button class="btn-ghost">${icon("folder")}Show</button>`;
+  li.querySelector(".name").textContent = filename;
+  li.querySelector("button").onclick = () => fetch(`/api/reveal/${job}`, { method: "POST" });
+  $("recentList").prepend(li);
+  $("recent").classList.remove("hidden");
+}
+
+$("quitBtn")?.addEventListener("click", async () => {
+  await fetch("/api/quit", { method: "POST" }).catch(() => {});
+  document.querySelector("main").innerHTML = `<header><div><h1>YT Downloader stopped</h1><p>Open it again whenever you need it. You can close this tab.</p></div></header>`;
+});
+
+chips($("formatChips"), FORMATS.map(([v, l]) => [v, l]), "container");
+chips($("bitrateChips"), BITRATES, "bitrate");
+updateFormatHint();
+fetch("/api/version").then(r => r.json()).then(v => $("version").textContent = `yt-dlp ${v.ytdlp}`).catch(() => {});
 </script>
 </body>
 </html>

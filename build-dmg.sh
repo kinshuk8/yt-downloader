@@ -16,7 +16,7 @@ done
 
 echo "→ Python environment"
 [ -x "$B/venv/bin/python" ] || python3 -m venv "$B/venv"
-"$B/venv/bin/pip" install -q -U -r requirements.txt pywebview pyinstaller pillow
+"$B/venv/bin/pip" install -q -U -r requirements.txt pywebview pyinstaller pillow dmgbuild
 
 echo "→ Bundling ffmpeg + QuickJS"
 # ffmpeg merges/converts; QuickJS solves YouTube's JS challenge (needed for most video formats).
@@ -50,10 +50,16 @@ cp -R "$T" "$APP/Contents/MacOS/tools"
 codesign --force --deep --sign - "$APP" 2>/dev/null
 
 echo "→ Making DMG"
-rm -rf "$B/dmg" && mkdir "$B/dmg"
-cp -R "$APP" "$B/dmg/"
-ln -s /Applications "$B/dmg/Applications"
-rm -rf "dist/$APP_NAME.app" dist/YT-Downloader.dmg
-hdiutil create -volname "$APP_NAME" -srcfolder "$B/dmg" -format UDZO -ov dist/YT-Downloader.dmg >/dev/null 2>&1
+# Installer window artwork, drawn in Geist; 1x + 2x combined into one HiDPI TIFF.
+mkdir -p "$B/fonts"
+for w in SemiBold Regular; do
+  [ -f "$B/fonts/Geist-$w.ttf" ] ||
+    curl -sfL -o "$B/fonts/Geist-$w.ttf" "https://cdn.jsdelivr.net/npm/geist@1.3.1/dist/fonts/geist-sans/Geist-$w.ttf"
+done
+"$B/venv/bin/python" assets/make_dmg_background.py "$B/dmgbg" "$B/fonts"
+tiffutil -cathidpicheck "$B/dmgbg/dmg-bg.png" "$B/dmgbg/dmg-bg@2x.png" -out "$B/dmgbg/dmg-bg.tiff" >/dev/null 2>&1
+rm -f dist/YT-Downloader.dmg
+"$B/venv/bin/dmgbuild" -s assets/dmg_settings.py -D app="$APP" -D background="$B/dmgbg/dmg-bg.tiff" \
+  "$APP_NAME" dist/YT-Downloader.dmg >/dev/null 2> >(grep -v "is deprecated" >&2)
 
 echo "Done: $SRC/dist/YT-Downloader.dmg ($(du -h dist/YT-Downloader.dmg | cut -f1))"
