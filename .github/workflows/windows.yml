@@ -32,10 +32,37 @@ jobs:
           SNAG_VERSION: ${{ github.event.release.tag_name || '0.0.0' }}
         run: ./build-windows.sh
 
+      - name: Smoke test (install, open, screenshot, uninstall)
+        shell: pwsh
+        run: |
+          Start-Process dist\Snag-Setup.exe -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES' -Wait
+          $app = "$env:LOCALAPPDATA\Programs\Snag"
+          if (-not (Test-Path "$app\Snag.exe")) { throw "Snag.exe was not installed" }
+          $p = Start-Process "$app\Snag.exe" -PassThru
+          Start-Sleep -Seconds 20
+          $p.Refresh()
+          if ($p.HasExited) { throw "Snag exited right after starting (code $($p.ExitCode))" }
+          "Window title: '$($p.MainWindowTitle)'"
+          New-Item -ItemType Directory -Force smoke | Out-Null
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+          [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+          $bmp.Save("smoke\screenshot.png")
+          Stop-Process -Id $p.Id -Force
+          Start-Process "$app\unins000.exe" -ArgumentList '/VERYSILENT' -Wait
+
       - uses: actions/upload-artifact@v4
         with:
           name: snag-windows
           path: dist/
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-test-screenshot
+          path: smoke/
+          if-no-files-found: ignore
 
       - name: Attach to release
         if: github.event_name == 'release'
