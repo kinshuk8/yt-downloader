@@ -6,17 +6,17 @@
 
 <p align="center">
   <b>Save YouTube videos in up to 8K, or as MP3, with one paste.</b><br>
-  A small, native Mac app. Free, open source, and private.
+  A small, native app for Mac and Windows. Free, open source, and private.
 </p>
 
 <p align="center">
-  <a href="https://github.com/kinshuk8/yt-downloader/releases/latest/download/Snag.dmg">
-    <img src="docs/download.png" width="300" alt="Download for Mac">
-  </a>
+  <a href="https://github.com/kinshuk8/yt-downloader/releases/latest/download/Snag.dmg"><img src="docs/download-mac.png" width="300" alt="Download for Mac"></a>
+  &nbsp;
+  <a href="https://github.com/kinshuk8/yt-downloader/releases/latest/download/Snag-Setup.exe"><img src="docs/download-windows.png" width="300" alt="Download for Windows"></a>
 </p>
 
 <p align="center">
-  <sub>macOS · Apple silicon · 41 MB · <a href="https://github.com/kinshuk8/yt-downloader/releases">All releases</a></sub>
+  <sub>macOS on Apple silicon · Windows 10 &amp; 11 (64-bit) · <a href="https://github.com/kinshuk8/yt-downloader/releases">All releases</a></sub>
 </p>
 
 <br>
@@ -41,13 +41,13 @@
     </td>
     <td width="33%" valign="top">
       <h3>✨ Feels at home</h3>
-      Frosted glass, native window blur, and it follows your Mac's <b>light or dark</b> mode.
+      A clean, glassy design that follows your system's <b>light or dark</b> mode, with native window blur on Mac.
     </td>
   </tr>
   <tr>
     <td width="33%" valign="top">
       <h3>📦 Nothing to install</h3>
-      ffmpeg and everything else is <b>built in</b>. No Homebrew, no Terminal.
+      ffmpeg and everything else is <b>built in</b>. No extra downloads, no command line.
     </td>
     <td width="33%" valign="top">
       <h3>🔄 Keeps working</h3>
@@ -55,7 +55,7 @@
     </td>
     <td width="33%" valign="top">
       <h3>🔒 Private</h3>
-      Runs entirely on your Mac. No accounts, no tracking, nothing uploaded.
+      Runs entirely on your computer. No accounts, no tracking, nothing uploaded.
     </td>
   </tr>
 </table>
@@ -82,6 +82,8 @@
 
 ## Install in 10 seconds
 
+### On a Mac
+
 <p align="center">
   <img src="docs/installer.png" width="620" alt="Drag Snag into Applications">
 </p>
@@ -91,7 +93,14 @@
 3. The first time only: **right-click** the app → **Open** → **Open**.<br>
    <sub>The app isn't notarized by Apple, so macOS asks once. You can also allow it in System Settings → Privacy &amp; Security.</sub>
 
-Downloads are saved to **`~/Downloads/Snag`**. Click **Show** next to any download to see it in Finder.
+### On Windows
+
+1. **[Download Snag-Setup.exe](https://github.com/kinshuk8/yt-downloader/releases/latest/download/Snag-Setup.exe)** and run it. No admin rights needed.
+2. If Windows says **"Windows protected your PC"**, click **More info** → **Run anyway**.<br>
+   <sub>The app isn't code-signed yet, so SmartScreen asks the first time.</sub>
+3. Open **Snag** from the Start menu.
+
+Downloads are saved to the **Snag** folder inside your Downloads folder. Click **Show** next to any download to see it in Finder or File Explorer.
 
 <br>
 
@@ -141,6 +150,19 @@ The app is a Flask backend (`app.py`) shown in a native [pywebview](https://pywe
 </details>
 
 <details>
+<summary><b>Build the Windows installer</b></summary>
+<br>
+
+GitHub Actions builds it automatically: publishing a release attaches `Snag-Setup.exe` to it, and **Run workflow** on the [Windows build](.github/workflows/windows.yml) action makes a test build. To build on a Windows PC instead, install Python 3 and [Inno Setup 6](https://jrsoftware.org/isinfo.php), then run this in Git Bash:
+
+```bash
+./build-windows.sh
+```
+
+It bundles the LGPL build of FFmpeg and QuickJS-ng, runs the app's self-test, and writes `dist/Snag-Setup.exe`.
+</details>
+
+<details>
 <summary><b>Run it in the browser, from source</b></summary>
 <br>
 
@@ -169,14 +191,14 @@ The screenshots use [Big Buck Bunny](https://peach.blender.org) (CC BY, Blender 
 
 ## Built with
 
-[yt-dlp](https://github.com/yt-dlp/yt-dlp) · [FFmpeg](https://ffmpeg.org) · [QuickJS](https://bellard.org/quickjs/) · [pywebview](https://pywebview.flowrl.com) · [Flask](https://flask.palletsprojects.com) · [Geist](https://vercel.com/font) (SIL Open Font License)
+[yt-dlp](https://github.com/yt-dlp/yt-dlp) · [FFmpeg](https://ffmpeg.org) · [QuickJS](https://bellard.org/quickjs/) · [QuickJS-ng](https://github.com/quickjs-ng/quickjs) · [pywebview](https://pywebview.flowrl.com) · [Flask](https://flask.palletsprojects.com) · [Geist](https://vercel.com/font) (SIL Open Font License)
 
 ## License
 
-Snag's own code is [MIT-licensed](LICENSE). The app bundles open-source software under its own licenses, including FFmpeg (GPL-3.0-or-later). Every release includes:
+Snag's own code is [MIT-licensed](LICENSE). The apps bundle open-source software under its own licenses: FFmpeg is GPL-3.0-or-later in the Mac app and LGPL-2.1-or-later in the Windows app. Every release includes, for each platform:
 
-- **THIRD-PARTY-NOTICES.txt**, listing every bundled component with its full license text. It's also inside the app (**Licenses** at the bottom of the window).
-- **snag-third-party-sources.tar.gz**, the exact source code and build recipes for the GPL/LGPL components (FFmpeg, x264, x265, LAME, mpg123).
+- **THIRD-PARTY-NOTICES.txt** (Mac) and **THIRD-PARTY-NOTICES-windows.txt**, listing every bundled component with its full license text. They're also inside the app (**Licenses** at the bottom of the window).
+- **snag-third-party-sources.tar.gz** (Mac) and **snag-windows-third-party-sources.tar.gz**, the exact source code and build recipes for the GPL/LGPL components.
 
 ## Please download responsibly
 

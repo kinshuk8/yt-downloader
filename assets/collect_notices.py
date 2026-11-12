@@ -106,7 +106,9 @@ def python_components():
     comps = [{
         "name": "Python", "version": sys.version.split()[0], "license": "PSF-2.0",
         "url": "https://www.python.org", "source": None,
-        "texts": [("LICENSE.txt", read(Path(sysconfig.get_paths()["stdlib"]) / "LICENSE.txt"))],
+        # macOS/Linux keep Python's license in the stdlib folder; Windows keeps it in the install folder.
+        "texts": [("LICENSE.txt", read(next(p for p in (Path(sysconfig.get_paths()["stdlib"]) / "LICENSE.txt",
+                                                      Path(sys.base_prefix) / "LICENSE.txt") if p.exists())))],
     }]
     for name, dist in sorted(seen.items()):
         meta = dist.metadata

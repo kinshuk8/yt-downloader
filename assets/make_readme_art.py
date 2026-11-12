@@ -43,9 +43,9 @@ def hero():
     img.convert("RGB").resize((W // 2, H // 2), Image.LANCZOS).save(docs / "hero.png", optimize=True)
 
 
-def download_button():
-    """Coral 'Download for Mac' pill matching the app's primary button, drawn at 2x."""
-    W, H, pad = 560, 128, 16
+def download_button(label, filename):
+    """Coral download pill matching the app's primary button, drawn at 2x."""
+    W, H, pad = 640, 128, 16
     img = Image.new("RGBA", (W + pad * 2, H + pad * 3), (0, 0, 0, 0))
     shadow = Image.new("RGBA", img.size, (0, 0, 0, 0))
     ImageDraw.Draw(shadow).rounded_rectangle((pad + 20, pad + 24, pad + W - 20, pad + H + 8), radius=40, fill=(240, 69, 58, 110))
@@ -64,7 +64,6 @@ def download_button():
     d.rounded_rectangle((pad, pad, pad + W - 1, pad + H - 1), radius=32, outline=(255, 255, 255, 50), width=2)
     # Download glyph (arrow over a tray) + label, centred together.
     font = ImageFont.truetype(str(fonts / "Geist-SemiBold.ttf"), 40)
-    label = "Download for Mac"
     glyph_w, gap = 40, 24
     text_w = d.textlength(label, font=font)
     x0 = pad + (W - (glyph_w + gap + text_w)) / 2
@@ -74,7 +73,7 @@ def download_button():
     d.line([(cx - 14, cy - 5), (cx, cy + 9), (cx + 14, cy - 5)], fill=white, width=7, joint="curve")
     d.line([(cx - 20, cy + 24), (cx + 20, cy + 24)], fill=white, width=7)
     d.text((x0 + glyph_w + gap, cy), label, font=font, fill=white, anchor="lm")
-    img.save(docs / "download.png", optimize=True)
+    img.save(docs / filename, optimize=True)
 
 
 def icon():
@@ -91,7 +90,8 @@ def screenshots():
 
 
 hero()
-download_button()
+download_button("Download for Mac", "download-mac.png")
+download_button("Download for Windows", "download-windows.png")
 icon()
 screenshots()
 print(f"Wrote images to {docs}")
