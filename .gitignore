@@ -3,3 +3,5 @@ __pycache__/
 server.log
 .DS_Store
 dist/
+build-win/
+windows/MicrosoftEdgeWebview2Setup.exe

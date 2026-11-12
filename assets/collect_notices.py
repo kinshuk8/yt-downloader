@@ -1,7 +1,10 @@
 """Writes THIRD-PARTY-NOTICES.txt for the packaged app, and gathers the GPL/LGPL sources each release must publish.
 
-usage: collect_notices.py TOOLS_DIR OUT_DIR
-TOOLS_DIR is the bundled ffmpeg/QuickJS folder from build-dmg.sh (binaries + libs/).
+usage: collect_notices.py TOOLS_DIR OUT_DIR [MANIFEST]
+TOOLS_DIR is the bundled ffmpeg/QuickJS folder (binaries, plus libs/ on macOS).
+On macOS the native components are looked up in Homebrew. Elsewhere (the Windows build) pass MANIFEST, a JSON
+file describing them: {"intro": [...], "components": [{name, version, license, url, license_files}],
+"sources": [paths], "sources_readme": "..."}.
 Writes OUT_DIR/THIRD-PARTY-NOTICES.txt and OUT_DIR/third-party-sources/ (source tarballs + build recipes).
 Run with the build venv's Python so the bundled Python packages are the ones listed.
 """
@@ -18,8 +21,9 @@ from packaging.markers import default_environment
 from packaging.requirements import Requirement
 
 tools, out = Path(sys.argv[1]), Path(sys.argv[2])
+manifest = json.loads(Path(sys.argv[3]).read_text(encoding="utf-8")) if len(sys.argv) > 3 else None
 root = Path(__file__).resolve().parent.parent
-CELLAR = Path(subprocess.run(["brew", "--cellar"], capture_output=True, text=True, check=True).stdout.strip())
+EXE = ".exe" if sys.platform == "win32" else ""
 LICENSE_FILE = re.compile(r"^(licen[cs]e|copying|copyright|notice|ofl)[^/]*$", re.I)
 COPYLEFT = re.compile(r"\b(L?GPL)", re.I)
 # Packages left out of the app on purpose (mutagen is GPL and Snag doesn't need it).
@@ -30,8 +34,19 @@ def sh(*cmd):
     return subprocess.run(cmd, capture_output=True, text=True, check=True).stdout
 
 
+def read(path):
+    return Path(path).read_text(encoding="utf-8", errors="replace")
+
+
+def manifest_components():
+    return [{**c, "source": None, "texts": [(Path(f).name, read(f)) for f in c.get("license_files", [])]}
+            for c in manifest["components"]]
+
+
 def native_components():
     """Homebrew formulas behind every binary and library bundled in TOOLS_DIR."""
+    global CELLAR
+    CELLAR = Path(sh("brew", "--cellar").strip())
     names = [p.name for p in tools.iterdir() if p.is_file()] + [p.name for p in (tools / "libs").iterdir()]
     formulas = {}
     for name in names:
@@ -51,7 +66,7 @@ def native_components():
         comps.append({
             "name": formula, "version": version, "license": license_,
             "url": meta.get("homepage"), "source": meta["urls"]["stable"]["url"],
-            "texts": [(p.name, p.read_text(errors="replace")) for p in texts],
+            "texts": [(p.name, read(p)) for p in texts],
         })
     return comps
 
@@ -91,11 +106,11 @@ def python_components():
     comps = [{
         "name": "Python", "version": sys.version.split()[0], "license": "PSF-2.0",
         "url": "https://www.python.org", "source": None,
-        "texts": [("LICENSE.txt", (Path(sysconfig.get_paths()["stdlib"]) / "LICENSE.txt").read_text())],
+        "texts": [("LICENSE.txt", read(Path(sysconfig.get_paths()["stdlib"]) / "LICENSE.txt"))],
     }]
     for name, dist in sorted(seen.items()):
         meta = dist.metadata
-        texts = [(f.name, Path(f.locate()).read_text(errors="replace"))
+        texts = [(f.name, read(f.locate()))
                  for f in (dist.files or []) if LICENSE_FILE.match(f.name)]
         license_ = meta.get("License-Expression") or next(iter((meta.get("License") or "").splitlines()), "")[:60]
         if not license_:  # older packages only declare it as a trove classifier
@@ -111,7 +126,7 @@ def python_components():
 
 def font_components():
     return [{"name": "Geist (font)", "version": "1.3.1", "license": "OFL-1.1", "url": "https://vercel.com/font",
-             "source": None, "texts": [("OFL.txt", (root / "static" / "fonts" / "OFL.txt").read_text())]}]
+             "source": None, "texts": [("OFL.txt", read(root / "static" / "fonts" / "OFL.txt"))]}]
 
 
 def gather_sources(comps, dest):
@@ -127,7 +142,7 @@ def gather_sources(comps, dest):
         else:
             shutil.copy(cached, dest / cached.name.split("--", 1)[-1])
         (dest / f"{c['name']}.rb").write_text(sh("brew", "cat", c["name"]))
-    (dest / "ffmpeg-configuration.txt").write_text(sh(str(tools / "ffmpeg"), "-hide_banner", "-buildconf"))
+    (dest / "ffmpeg-configuration.txt").write_text(sh(str(tools / f"ffmpeg{EXE}"), "-hide_banner", "-buildconf"))
     (dest / "README.txt").write_text(
         "Corresponding source for the GPL/LGPL components bundled in Snag.\n\n"
         "Each tarball is the unmodified upstream source. The .rb files are the Homebrew build recipes\n"
@@ -136,7 +151,23 @@ def gather_sources(comps, dest):
         "which only rewrites library load paths.\n")
 
 
-native = native_components()
+def gather_manifest_sources(dest):
+    """The Windows build downloads its sources itself; copy them in alongside FFmpeg's build record."""
+    dest.mkdir(parents=True, exist_ok=True)
+    for src in manifest["sources"]:
+        shutil.copy(src, dest / Path(src).name)
+    (dest / "ffmpeg-configuration.txt").write_text(
+        sh(str(tools / f"ffmpeg{EXE}"), "-hide_banner", "-buildconf"), encoding="utf-8")
+    (dest / "README.txt").write_text(manifest["sources_readme"], encoding="utf-8")
+
+
+MAC_INTRO = [
+    "FFmpeg in this app is licensed under the GPL-3.0-or-later and includes GPL (x264, x265) and LGPL",
+    "(LAME, mpg123) components. FFmpeg and QuickJS run as separate programs; Snag does not link to them.",
+    "The complete corresponding source code for every GPL/LGPL component, with the exact build recipes,",
+    "is published with each release as snag-third-party-sources.tar.gz:",
+]
+native = manifest_components() if manifest else native_components()
 comps = native + python_components() + font_components()
 out.mkdir(parents=True, exist_ok=True)
 
@@ -147,10 +178,7 @@ lines = [
     "Snag's own code is MIT-licensed (see LICENSE). The app bundles the open-source software listed",
     "below, each under its own license. Full license texts follow the list.",
     "",
-    "FFmpeg in this app is licensed under the GPL-3.0-or-later and includes GPL (x264, x265) and LGPL",
-    "(LAME, mpg123) components. FFmpeg and QuickJS run as separate programs; Snag does not link to them.",
-    "The complete corresponding source code for every GPL/LGPL component, with the exact build recipes,",
-    "is published with each release as snag-third-party-sources.tar.gz:",
+    *(manifest["intro"] if manifest else MAC_INTRO),
     "  https://github.com/kinshuk8/yt-downloader/releases",
     "",
     "The app is packaged with PyInstaller, whose bootloader is GPL-2.0 with an exception that permits",
@@ -167,7 +195,10 @@ for c in comps:
     lines += ["", "=" * 72, f"{c['name']} {c['version']}", "=" * 72]
     for fname, text in c["texts"]:
         lines += [f"--- {fname} ---", text.strip(), ""]
-(out / "THIRD-PARTY-NOTICES.txt").write_text("\n".join(lines) + "\n")
+(out / "THIRD-PARTY-NOTICES.txt").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-gather_sources(native, out / "third-party-sources")
+if manifest:
+    gather_manifest_sources(out / "third-party-sources")
+else:
+    gather_sources(native, out / "third-party-sources")
 print(f"{len(comps)} components; notices and sources in {out}")

@@ -5,12 +5,16 @@ and put it first on sys.path, so `import yt_dlp` picks it up instead of the bund
 """
 import hashlib
 import json
+import os
 import sys
 import threading
 import urllib.request
 from pathlib import Path
 
-CACHE = Path.home() / "Library" / "Application Support" / "Snag"
+if sys.platform == "win32":
+    CACHE = Path(os.environ.get("LOCALAPPDATA", Path.home())) / "Snag"
+else:
+    CACHE = Path.home() / "Library" / "Application Support" / "Snag"
 ZIP = CACHE / "yt-dlp.zip"
 RELEASE_API = "https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest"
 

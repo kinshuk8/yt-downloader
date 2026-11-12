@@ -319,9 +319,12 @@
 <script>
 const $ = id => document.getElementById(id);
 const icon = name => `<svg><use href="#i-${name}"/></svg>`;
-const isApp = new URLSearchParams(location.search).has("app");
-// In the Mac app the window has native blur, and closing it quits; Quit is only for the browser version.
-if (isApp) { document.documentElement.classList.add("native"); $("quitBtn").remove(); }
+const params = new URLSearchParams(location.search);
+const isApp = params.has("app");
+// In the desktop app closing the window quits, so Quit is only for the browser version.
+// "glass" = the Mac app, where the window has native blur behind a transparent page.
+if (isApp) $("quitBtn").remove();
+if (params.has("glass")) document.documentElement.classList.add("native");
 
 const state = { url: "", mode: "video", quality: "best", container: "mp4", bitrate: "320", busy: false };
 const FORMATS = [["mp4", "MP4", "Plays everywhere"], ["mkv", "MKV", "Best for 4K / HDR"], ["webm", "WebM", "YouTube's native format"]];
@@ -499,7 +502,7 @@ chips($("formatChips"), FORMATS.map(([v, l]) => [v, l]), "container");
 chips($("bitrateChips"), BITRATES, "bitrate");
 updateFormatHint();
 fetch("/api/version").then(r => r.json()).then(v => $("version").textContent = `yt-dlp ${v.ytdlp}`).catch(() => {});
-if (isApp) $("licensesLink").href = "/licenses?app=1";
+if (isApp) $("licensesLink").href = `/licenses${location.search}`;
 </script>
 </body>
 </html>

@@ -15,8 +15,9 @@ DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # Inside the packaged .app, bundled files live next to the executable / in sys._MEIPASS.
 BASE = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
-# ffmpeg (merging/MP3) and QuickJS (YouTube's JS challenge) ship inside the .app.
+# ffmpeg (merging/MP3) and QuickJS (YouTube's JS challenge) ship inside the packaged app, next to the executable.
 TOOLS = Path(sys.executable).parent / "tools"
+EXE = ".exe" if sys.platform == "win32" else ""
 
 app = Flask(__name__, static_folder=str(BASE / "static"), static_url_path="")
 jobs = {}  # job_id -> dict(status, percent, speed, eta, filepath, error, title)
@@ -33,7 +34,7 @@ def licenses():
     parts = [p.read_text() for p in (BASE / "LICENSE", BASE / "THIRD-PARTY-NOTICES.txt") if p.exists()]
     if len(parts) < 2:
         parts.append("Third-party notices are generated when the app is built (see build-dmg.sh).")
-    back = "/?app=1" if request.args.get("app") else "/"
+    back = f"/?{request.query_string.decode()}" if request.query_string else "/"
     return f"""<!doctype html><meta charset="utf-8"><meta name="color-scheme" content="light dark">
 <title>Licenses</title>
 <style>
@@ -115,7 +116,13 @@ def reveal(job_id):
     job = jobs.get(job_id)
     if not job or not job.get("filepath"):
         return jsonify(error="File not ready."), 404
-    subprocess.run(["open", "-R", job["filepath"]])
+    path = job["filepath"]
+    if sys.platform == "win32":
+        subprocess.run(f'explorer /select,"{path}"')  # explorer wants the path quoted right after the comma
+    elif sys.platform == "darwin":
+        subprocess.run(["open", "-R", path])
+    else:
+        subprocess.run(["xdg-open", str(Path(path).parent)])
     return jsonify(ok=True)
 
 
@@ -149,10 +156,10 @@ def _options(body, job_id):
         "outtmpl": str(DOWNLOAD_DIR / "%(title)s [%(id)s].%(ext)s"),
         "windowsfilenames": True,
     }
-    if (TOOLS / "ffmpeg").exists():
+    if (TOOLS / f"ffmpeg{EXE}").exists():
         opts["ffmpeg_location"] = str(TOOLS)
-    if (TOOLS / "qjs").exists():
-        opts["js_runtimes"] = {"quickjs": {"path": str(TOOLS / "qjs")}}
+    if (TOOLS / f"qjs{EXE}").exists():
+        opts["js_runtimes"] = {"quickjs": {"path": str(TOOLS / f"qjs{EXE}")}}
 
     if body.get("mode") == "audio":
         opts.update(
